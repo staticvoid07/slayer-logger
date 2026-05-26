@@ -65,8 +65,8 @@ app.get('/', async (req, res) => {
   try {
     const username = req.query.username || null;
     const type = req.query.type || null;
-    const dateFrom = req.query.date_from || null;
-    const dateTo = req.query.date_to || null;
+    const dateFrom = req.query.date_from ? req.query.date_from + 'Z' : null;
+    const dateTo = req.query.date_to ? req.query.date_to + 'Z' : null;
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = 50;
     const offset = (page - 1) * limit;
@@ -113,8 +113,8 @@ app.get('/', async (req, res) => {
       totalPages,
       username,
       type,
-      dateFrom,
-      dateTo,
+      dateFrom: dateFrom ? dateFrom.slice(0, -1) : null,
+      dateTo: dateTo ? dateTo.slice(0, -1) : null,
       usernames,
     }));
   } catch (err) {
@@ -126,8 +126,8 @@ app.get('/', async (req, res) => {
 app.get('/stats', async (req, res) => {
   try {
     const username = req.query.username || null;
-    const dateFrom = req.query.date_from || null;
-    const dateTo = req.query.date_to || null;
+    const dateFrom = req.query.date_from ? req.query.date_from + 'Z' : null;
+    const dateTo = req.query.date_to ? req.query.date_to + 'Z' : null;
 
     const usernamesResult = await pool.query(
       `SELECT DISTINCT username FROM events ORDER BY username`
@@ -135,7 +135,13 @@ app.get('/stats', async (req, res) => {
     const usernames = usernamesResult.rows.map(r => r.username);
 
     if (!username) {
-      return res.send(renderStats({ username: null, dateFrom, dateTo, usernames, stats: null }));
+      return res.send(renderStats({
+        username: null,
+        dateFrom: dateFrom ? dateFrom.slice(0, -1) : null,
+        dateTo: dateTo ? dateTo.slice(0, -1) : null,
+        usernames,
+        stats: null,
+      }));
     }
 
     const conditions = [`username = $1`];
@@ -220,7 +226,13 @@ app.get('/stats', async (req, res) => {
       totalSkipped: Object.values(skippedByMonster).reduce((a, b) => a + b, 0),
     };
 
-    res.send(renderStats({ username, dateFrom, dateTo, usernames, stats }));
+    res.send(renderStats({
+      username,
+      dateFrom: dateFrom ? dateFrom.slice(0, -1) : null,
+      dateTo: dateTo ? dateTo.slice(0, -1) : null,
+      usernames,
+      stats,
+    }));
   } catch (err) {
     console.error('Stats query failed:', err);
     res.status(500).send('Internal server error');

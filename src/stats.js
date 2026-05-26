@@ -150,11 +150,11 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
         </select>
       </label>
       <label>
-        From
+        From (UTC)
         <input type="datetime-local" name="date_from" value="${escHtml(dateFrom || '')}">
       </label>
       <label>
-        To
+        To (UTC)
         <input type="datetime-local" name="date_to" value="${escHtml(dateTo || '')}">
       </label>
       <button type="submit">View Stats</button>

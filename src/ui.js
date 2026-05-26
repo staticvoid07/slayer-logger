@@ -124,11 +124,11 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
         </select>
       </label>
       <label>
-        From
+        From (UTC)
         <input type="datetime-local" name="date_from" value="${escHtml(dateFrom || '')}">
       </label>
       <label>
-        To
+        To (UTC)
         <input type="datetime-local" name="date_to" value="${escHtml(dateTo || '')}">
       </label>
       <button type="submit">Filter</button>
