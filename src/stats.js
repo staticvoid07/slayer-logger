@@ -23,9 +23,25 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
   } else {
     const {
       completedByMonster, assignedByMonster, taskCountByMonster, skippedByMonster,
-      totalXp, totalPoints, latestTotalPoints, overallXpH, gaps,
+      totalXp, totalPoints, latestTotalPoints, overallXpH, currentTask, gaps,
       totalCompleted, totalSkipped,
     } = stats;
+
+    // Current task banner
+    const currentTaskBanner = currentTask
+      ? `<div style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem">
+           <div>
+             <div style="font-size:0.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">Current Task</div>
+             <div style="font-size:1.25rem;font-weight:700;color:#f9fafb;text-transform:capitalize">${escHtml(currentTask.monster)}</div>
+           </div>
+           <div style="margin-left:auto;text-align:right">
+             <div style="font-size:0.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">Assigned</div>
+             <div style="font-size:1.25rem;font-weight:700;color:#f9fafb">${currentTask.amount.toLocaleString()}</div>
+           </div>
+         </div>`
+      : `<div style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem;color:#6b7280;font-size:0.875rem">
+           No active task
+         </div>`;
 
     // Summary cards
     const cards = [
@@ -79,6 +95,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
          </div>`;
 
     body = `
+      ${currentTaskBanner}
       <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.75rem">${cards}</div>
 
       <h2 style="font-size:1rem;font-weight:600;color:#f9fafb;margin-bottom:0.75rem">Tasks by Monster</h2>

@@ -242,6 +242,19 @@ app.get('/stats', async (req, res) => {
       ? Math.round(totalXp / (totalTaskMs / 3_600_000))
       : null;
 
+    // --- Current task: look at ALL events for this player, not just filtered range ---
+    const { rows: recentEvents } = await pool.query(
+      `SELECT message_type, monster, amount, occurred_at
+       FROM events WHERE username = $1
+       ORDER BY occurred_at DESC LIMIT 50`,
+      [username]
+    );
+    let currentTask = null;
+    for (const e of recentEvents) {
+      if (e.message_type === 'task completed') break;
+      if (e.message_type === 'new task') { currentTask = e; break; }
+    }
+
     const stats = {
       completedByMonster,
       assignedByMonster,
@@ -251,6 +264,7 @@ app.get('/stats', async (req, res) => {
       totalPoints,
       latestTotalPoints,
       overallXpH,
+      currentTask,
       gaps,
       totalCompleted: completedStreaks.length,
       totalSkipped: Object.values(skippedByMonster).reduce((a, b) => a + b, 0),
