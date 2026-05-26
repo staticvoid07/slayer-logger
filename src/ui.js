@@ -18,8 +18,8 @@ function formatDate(d) {
 
 function row(e) {
   const extra = e.message_type === 'task completed'
-    ? `<td style="text-align:center">${e.tasks ?? '—'}</td><td style="text-align:center">${e.points ?? '—'}</td>`
-    : `<td style="text-align:center">—</td><td style="text-align:center">—</td>`;
+    ? `<td style="text-align:center">${e.tasks ?? '—'}</td><td style="text-align:center">${e.points ?? '—'}</td><td style="text-align:center">${e.total_points ?? '—'}</td>`
+    : `<td style="text-align:center">—</td><td style="text-align:center">—</td><td style="text-align:center">—</td>`;
 
   return `
   <tr>
@@ -84,6 +84,9 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
     button:hover { background: #2563eb; }
     a.reset { color: #9ca3af; font-size: 0.8rem; align-self: flex-end; padding-bottom: 7px; }
     .stats { color: #6b7280; margin-bottom: 1rem; font-size: 0.82rem; }
+    .search-bar { margin-bottom: 0.75rem; }
+    .search-bar input { width: 100%; padding: 7px 12px; font-size: 0.875rem; }
+    tbody tr.hidden { display: none; }
     table { width: 100%; border-collapse: collapse; }
     thead tr { background: #1f2937; }
     th { text-align: left; padding: 10px 12px; font-size: 0.78rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #374151; }
@@ -132,6 +135,9 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
       <a class="reset" href="/">Clear</a>
     </form>
     <div class="stats">Showing ${events.length} of ${total} event${total !== 1 ? 's' : ''}</div>
+    <div class="search-bar">
+      <input type="search" id="rowSearch" placeholder="Search visible rows by any field…" oninput="filterRows(this.value)">
+    </div>
     <table>
       <thead>
         <tr>
@@ -140,16 +146,25 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
           <th>Type</th>
           <th>Monster</th>
           <th style="text-align:center">Amount</th>
-          <th style="text-align:center">Tasks</th>
+          <th style="text-align:center">Task #</th>
           <th style="text-align:center">Points</th>
+          <th style="text-align:center">Total Points</th>
         </tr>
       </thead>
       <tbody>
-        ${rows || '<tr><td colspan="7" class="empty">No events found</td></tr>'}
+        ${rows || '<tr><td colspan="8" class="empty">No events found</td></tr>'}
       </tbody>
     </table>
     ${totalPages > 1 ? `<div class="pager">${pager.join('')}</div>` : ''}
   </div>
+  <script>
+    function filterRows(q) {
+      const term = q.trim().toLowerCase();
+      document.querySelectorAll('tbody tr').forEach(tr => {
+        tr.classList.toggle('hidden', term !== '' && !tr.textContent.toLowerCase().includes(term));
+      });
+    }
+  </script>
 </body>
 </html>`;
 }

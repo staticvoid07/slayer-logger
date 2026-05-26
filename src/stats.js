@@ -40,15 +40,17 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
     const monsterRows = Object.entries(completedByMonster)
       .sort((a, b) => b[1].completions - a[1].completions)
       .map(([monster, d]) => {
-        const pct = totalCompleted > 0 ? ((d.completions / totalCompleted) * 100).toFixed(1) : '0.0';
+        const skips = skippedByMonster[monster] ?? 0;
+        const assigned = d.completions + skips;
+        const pct = assigned > 0 ? ((d.completions / assigned) * 100).toFixed(1) : '100.0';
         return `
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
           <td style="text-align:center">${d.completions}</td>
+          <td style="text-align:center">${skips || '—'}</td>
           <td style="text-align:center">${pct}%</td>
           <td style="text-align:center">${d.kills.toLocaleString()}</td>
           <td style="text-align:center">${d.xp > 0 ? d.xp.toLocaleString() : '—'}</td>
-          <td style="text-align:center">${(skippedByMonster[monster] ?? 0) || '—'}</td>
         </tr>`;
       })
       .join('');
@@ -61,10 +63,10 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
           <td style="text-align:center">0</td>
+          <td style="text-align:center">${count}</td>
           <td style="text-align:center">0%</td>
           <td style="text-align:center">0</td>
           <td style="text-align:center">—</td>
-          <td style="text-align:center">${count}</td>
         </tr>`)
       .join('');
 
@@ -84,11 +86,11 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
           <thead>
             <tr style="background:#1f2937">
               <th style="${thStyle()}text-align:left">Monster</th>
-              <th style="${thStyle()}text-align:center">Completions</th>
-              <th style="${thStyle()}text-align:center">% of Tasks</th>
+              <th style="${thStyle()}text-align:center">Completed</th>
+              <th style="${thStyle()}text-align:center">Skipped</th>
+              <th style="${thStyle()}text-align:center">Completion %</th>
               <th style="${thStyle()}text-align:center">Kills</th>
               <th style="${thStyle()}text-align:center">XP</th>
-              <th style="${thStyle()}text-align:center">Skips</th>
             </tr>
           </thead>
           <tbody>
