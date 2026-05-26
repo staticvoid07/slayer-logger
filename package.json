@@ -1,0 +1,14 @@
+{
+  "name": "slayer-logger",
+  "version": "1.0.0",
+  "description": "Receives and stores OSRS slayer task webhook events",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}
