@@ -62,6 +62,8 @@ app.get('/', async (req, res) => {
   try {
     const username = req.query.username || null;
     const type = req.query.type || null;
+    const dateFrom = req.query.date_from || null;
+    const dateTo = req.query.date_to || null;
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = 50;
     const offset = (page - 1) * limit;
@@ -76,6 +78,14 @@ app.get('/', async (req, res) => {
     if (type) {
       params.push(type);
       conditions.push(`message_type = $${params.length}`);
+    }
+    if (dateFrom) {
+      params.push(dateFrom);
+      conditions.push(`occurred_at >= $${params.length}::date`);
+    }
+    if (dateTo) {
+      params.push(dateTo);
+      conditions.push(`occurred_at < ($${params.length}::date + interval '1 day')`);
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -100,6 +110,8 @@ app.get('/', async (req, res) => {
       totalPages,
       username,
       type,
+      dateFrom,
+      dateTo,
       usernames,
     }));
   } catch (err) {

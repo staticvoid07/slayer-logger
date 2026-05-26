@@ -46,10 +46,12 @@ function pagerLink(page, label, current, query) {
   return `<a href="/?${q}" style="padding:4px 10px;border-radius:4px;border:1px solid #374151;background:${active ? '#3b82f6' : '#1f2937'};color:${active ? '#fff' : '#d1d5db'};text-decoration:none">${label}</a>`;
 }
 
-function renderPage({ events, total, page, totalPages, username, type, usernames }) {
+function renderPage({ events, total, page, totalPages, username, type, dateFrom, dateTo, usernames }) {
   const query = {};
   if (username) query.username = username;
   if (type) query.type = type;
+  if (dateFrom) query.date_from = dateFrom;
+  if (dateTo) query.date_to = dateTo;
 
   const pager = [];
   if (page > 1) pager.push(pagerLink(page - 1, '&laquo; Prev', page, query));
@@ -75,7 +77,7 @@ function renderPage({ events, total, page, totalPages, username, type, usernames
     body { background: #111827; color: #e5e7eb; font-family: system-ui, sans-serif; font-size: 0.9rem; }
     h1 { font-size: 1.5rem; font-weight: 700; color: #f9fafb; }
     .header { background: #1f2937; border-bottom: 1px solid #374151; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
-    .skull { font-size: 1.4rem; }
+    .skull { height: 32px; width: auto; image-rendering: pixelated; }
     .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
     .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: flex-end; }
     label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: #9ca3af; }
@@ -95,7 +97,7 @@ function renderPage({ events, total, page, totalPages, username, type, usernames
 </head>
 <body>
   <div class="header">
-    <span class="skull">💀</span>
+    <img class="skull" src="https://oldschool.runescape.wiki/images/Slayer_icon.png" alt="Slayer">
     <h1>Slayer Logger</h1>
   </div>
   <div class="container">
@@ -115,6 +117,14 @@ function renderPage({ events, total, page, totalPages, username, type, usernames
           <option value="task reminder"${type === 'task reminder' ? ' selected' : ''}>Reminder</option>
           <option value="task completed"${type === 'task completed' ? ' selected' : ''}>Completed</option>
         </select>
+      </label>
+      <label>
+        From
+        <input type="date" name="date_from" value="${escHtml(dateFrom || '')}">
+      </label>
+      <label>
+        To
+        <input type="date" name="date_to" value="${escHtml(dateTo || '')}">
       </label>
       <button type="submit">Filter</button>
       <a class="reset" href="/">Clear</a>
