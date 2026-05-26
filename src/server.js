@@ -242,12 +242,11 @@ app.get('/stats', async (req, res) => {
       ? Math.round(totalXp / (totalTaskMs / 3_600_000))
       : null;
 
-    // --- Current task: look at ALL events for this player, not just filtered range ---
+    // --- Current task: most recent new task in the filtered range with no completion after it ---
     const { rows: recentEvents } = await pool.query(
       `SELECT message_type, monster, amount, occurred_at
-       FROM events WHERE username = $1
-       ORDER BY occurred_at DESC LIMIT 50`,
-      [username]
+       FROM events ${where} ORDER BY occurred_at DESC LIMIT 50`,
+      params
     );
     let currentTask = null;
     for (const e of recentEvents) {

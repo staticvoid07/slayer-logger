@@ -60,8 +60,9 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
         const taskCount = taskCountByMonster[monster] ?? 0;
         const pct = taskCount > 0 ? ((d.completions / taskCount) * 100).toFixed(1) : '100.0';
         const totalAssigned = (assignedByMonster[monster] ?? 0).toLocaleString();
+        const isActive = currentTask && currentTask.monster.toLowerCase() === monster;
         return `
-        <tr>
+        <tr${isActive ? ' style="background:#052e16"' : ''}>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
           <td style="text-align:center">${taskCount}</td>
           <td style="text-align:center">${d.completions} (${pct}%)</td>
@@ -147,6 +148,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
     button:hover { background: #2563eb; }
     td { padding: 10px 12px; border-bottom: 1px solid #1f2937; vertical-align: middle; }
     tr:hover td { background: #1a2332; }
+    tr[style*="052e16"]:hover td { background: #064e24; }
   </style>
 </head>
 <body>
