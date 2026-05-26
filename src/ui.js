@@ -128,7 +128,6 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
         <select name="type">
           <option value=""${!type ? ' selected' : ''}>All types</option>
           <option value="new task"${type === 'new task' ? ' selected' : ''}>New Task</option>
-          <option value="task reminder"${type === 'task reminder' ? ' selected' : ''}>Reminder</option>
           <option value="task completed"${type === 'task completed' ? ' selected' : ''}>Completed</option>
         </select>
       </label>

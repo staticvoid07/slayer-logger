@@ -47,6 +47,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
         return `
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
+          <td style="text-align:center">${assigned}</td>
           <td style="text-align:center">${d.completions}</td>
           <td style="text-align:center">${skips || '—'}</td>
           <td style="text-align:center">${pct}%</td>
@@ -63,6 +64,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
       .map(([monster, count]) => `
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
+          <td style="text-align:center">${count}</td>
           <td style="text-align:center">0</td>
           <td style="text-align:center">${count}</td>
           <td style="text-align:center">0%</td>
@@ -87,6 +89,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
           <thead>
             <tr style="background:#1f2937">
               <th style="${thStyle()}text-align:left">Monster</th>
+              <th style="${thStyle()}text-align:center">Assigned</th>
               <th style="${thStyle()}text-align:center">Completed</th>
               <th style="${thStyle()}text-align:center">Skipped</th>
               <th style="${thStyle()}text-align:center">Completion %</th>
@@ -95,7 +98,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
             </tr>
           </thead>
           <tbody>
-            ${monsterRows || '<tr><td colspan="6" style="text-align:center;color:#4b5563;padding:2rem">No completed tasks</td></tr>'}
+            ${monsterRows || '<tr><td colspan="7" style="text-align:center;color:#4b5563;padding:2rem">No completed tasks</td></tr>'}
             ${skippedOnly}
           </tbody>
         </table>
