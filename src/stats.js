@@ -51,8 +51,8 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
           <td style="text-align:center">${d.completions}</td>
           <td style="text-align:center">${skips || '—'}</td>
           <td style="text-align:center">${pct}%</td>
-          <td style="text-align:center">${d.kills.toLocaleString()}</td>
           <td style="text-align:center">${totalAssigned}</td>
+          <td style="text-align:center">${d.kills.toLocaleString()}${assignedByMonster[monster] ? ` (${(d.kills / assignedByMonster[monster]).toFixed(2)})` : ''}</td>
           <td style="text-align:center">${d.xp > 0 ? d.xp.toLocaleString() : '—'}</td>
         </tr>`;
       })
@@ -68,8 +68,8 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
           <td style="text-align:center">0</td>
           <td style="text-align:center">${count}</td>
           <td style="text-align:center">0%</td>
-          <td style="text-align:center">0</td>
           <td style="text-align:center">${(assignedByMonster[monster] ?? 0).toLocaleString()}</td>
+          <td style="text-align:center">0 (0.00)</td>
           <td style="text-align:center">—</td>
         </tr>`)
       .join('');
@@ -93,8 +93,8 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
               <th style="${thStyle()}text-align:center">Completed</th>
               <th style="${thStyle()}text-align:center">Skipped</th>
               <th style="${thStyle()}text-align:center">Completion %</th>
-              <th style="${thStyle()}text-align:center">Kills</th>
               <th style="${thStyle()}text-align:center">Assigned</th>
+              <th style="${thStyle()}text-align:center">Kills</th>
               <th style="${thStyle()}text-align:center">XP</th>
             </tr>
           </thead>
