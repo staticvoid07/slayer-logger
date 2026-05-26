@@ -20,11 +20,13 @@ async function init() {
       tasks       INTEGER,
       points      INTEGER,
       xp          INTEGER,
+      total_points INTEGER,
       raw         JSONB       NOT NULL,
       received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
     ALTER TABLE events ADD COLUMN IF NOT EXISTS xp INTEGER;
+    ALTER TABLE events ADD COLUMN IF NOT EXISTS total_points INTEGER;
 
     CREATE INDEX IF NOT EXISTS idx_events_username     ON events (username);
     CREATE INDEX IF NOT EXISTS idx_events_occurred_at  ON events (occurred_at DESC);

@@ -23,7 +23,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
   } else {
     const {
       completedByMonster, skippedByMonster,
-      totalXp, totalPoints, gaps,
+      totalXp, totalPoints, latestTotalPoints, gaps,
       totalCompleted, totalSkipped,
     } = stats;
 
@@ -32,21 +32,25 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
       statCard('Tasks Completed', totalCompleted.toLocaleString()),
       statCard('Tasks Skipped', totalSkipped.toLocaleString()),
       statCard('Total XP', totalXp > 0 ? totalXp.toLocaleString() : '—'),
-      statCard('Points Earned', totalPoints.toLocaleString()),
+      statCard('Points Earned', totalPoints.toLocaleString(), latestTotalPoints != null ? `${latestTotalPoints.toLocaleString()} total` : null),
       statCard('Streak Gaps', gaps.length.toLocaleString()),
     ].join('');
 
     // Completed per monster table
     const monsterRows = Object.entries(completedByMonster)
       .sort((a, b) => b[1].completions - a[1].completions)
-      .map(([monster, d]) => `
+      .map(([monster, d]) => {
+        const pct = totalCompleted > 0 ? ((d.completions / totalCompleted) * 100).toFixed(1) : '0.0';
+        return `
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
           <td style="text-align:center">${d.completions}</td>
+          <td style="text-align:center">${pct}%</td>
           <td style="text-align:center">${d.kills.toLocaleString()}</td>
           <td style="text-align:center">${d.xp > 0 ? d.xp.toLocaleString() : '—'}</td>
           <td style="text-align:center">${(skippedByMonster[monster] ?? 0) || '—'}</td>
-        </tr>`)
+        </tr>`;
+      })
       .join('');
 
     // Skipped-only monsters (assigned but never completed in this period)
@@ -57,6 +61,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
           <td style="text-align:center">0</td>
+          <td style="text-align:center">0%</td>
           <td style="text-align:center">0</td>
           <td style="text-align:center">—</td>
           <td style="text-align:center">${count}</td>
@@ -80,13 +85,14 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
             <tr style="background:#1f2937">
               <th style="${thStyle()}text-align:left">Monster</th>
               <th style="${thStyle()}text-align:center">Completions</th>
+              <th style="${thStyle()}text-align:center">% of Tasks</th>
               <th style="${thStyle()}text-align:center">Kills</th>
               <th style="${thStyle()}text-align:center">XP</th>
               <th style="${thStyle()}text-align:center">Skips</th>
             </tr>
           </thead>
           <tbody>
-            ${monsterRows || '<tr><td colspan="5" style="text-align:center;color:#4b5563;padding:2rem">No completed tasks</td></tr>'}
+            ${monsterRows || '<tr><td colspan="6" style="text-align:center;color:#4b5563;padding:2rem">No completed tasks</td></tr>'}
             ${skippedOnly}
           </tbody>
         </table>

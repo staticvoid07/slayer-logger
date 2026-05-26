@@ -15,7 +15,7 @@ app.post('/webhook', async (req, res) => {
     return res.status(400).json({ error: 'Invalid JSON body' });
   }
 
-  const { username, timestamp, message_type, monster, amount, tasks, points, xp } = body;
+  const { username, timestamp, message_type, monster, amount, tasks, points, xp, total_points } = body;
 
   if (!username || !timestamp || !message_type || !monster || amount == null) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -39,8 +39,8 @@ app.post('/webhook', async (req, res) => {
 
   try {
     await pool.query(
-      `INSERT INTO events (username, occurred_at, message_type, monster, amount, tasks, points, xp, raw)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      `INSERT INTO events (username, occurred_at, message_type, monster, amount, tasks, points, xp, total_points, raw)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         username,
         occurredAt,
@@ -50,6 +50,7 @@ app.post('/webhook', async (req, res) => {
         tasks ?? null,
         points ?? null,
         xp ?? null,
+        total_points ?? null,
         JSON.stringify(body),
       ]
     );
@@ -161,6 +162,7 @@ app.get('/stats', async (req, res) => {
     const completedByMonster = {};
     let totalXp = 0;
     let totalPoints = 0;
+    let latestTotalPoints = null;
     const completedStreaks = [];
 
     for (const e of events) {
@@ -172,6 +174,7 @@ app.get('/stats', async (req, res) => {
         completedByMonster[m].completions += 1;
         totalXp += e.xp ?? 0;
         totalPoints += e.points ?? 0;
+        if (e.total_points != null) latestTotalPoints = e.total_points;
         if (e.tasks != null) completedStreaks.push(e.tasks);
       }
     }
@@ -211,6 +214,7 @@ app.get('/stats', async (req, res) => {
       skippedByMonster,
       totalXp,
       totalPoints,
+      latestTotalPoints,
       gaps,
       totalCompleted: completedStreaks.length,
       totalSkipped: Object.values(skippedByMonster).reduce((a, b) => a + b, 0),
