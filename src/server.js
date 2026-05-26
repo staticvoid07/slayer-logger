@@ -93,9 +93,12 @@ app.get('/', async (req, res) => {
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
+    // Use a window function to peek at the next event per username (chronologically)
+    // so we can flag new task events that were never followed by a completion — skips.
     const [eventsResult, countResult, usernamesResult] = await Promise.all([
       pool.query(
-        `SELECT * FROM events ${where} ORDER BY occurred_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+        `SELECT *, LEAD(message_type) OVER (PARTITION BY username ORDER BY occurred_at) AS next_message_type
+         FROM events ${where} ORDER BY occurred_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
         [...params, limit, offset]
       ),
       pool.query(`SELECT COUNT(*) FROM events ${where}`, params),

@@ -74,21 +74,19 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
     .map(u => `<option value="${escHtml(u)}"${u === username ? ' selected' : ''}>${escHtml(u)}</option>`)
     .join('');
 
-  // Events are newest-first. A new task is a skip if the next event is also a new task.
-  // Track running total_points so we can show the deducted total on skip rows.
-  // We scan forward (oldest→newest) to maintain a running points total, then render newest-first.
+  // next_message_type comes from a server-side LEAD() window function scoped per username.
+  // A new task is a skip when the chronologically next event for that player is also a new task.
   let runningPoints = null;
   for (let i = events.length - 1; i >= 0; i--) {
-    const e = events[i];
-    if (e.message_type === 'task completed' && e.total_points != null) {
-      runningPoints = e.total_points;
+    if (events[i].message_type === 'task completed' && events[i].total_points != null) {
+      runningPoints = events[i].total_points;
+      break;
     }
   }
-  // Build newest-first with skip detection
   const rowParts = [];
   for (let i = 0; i < events.length; i++) {
     const e = events[i];
-    const isSkip = e.message_type === 'new task' && events[i + 1]?.message_type === 'new task';
+    const isSkip = e.message_type === 'new task' && e.next_message_type === 'new task';
     let skipTotalPoints = null;
     if (isSkip && runningPoints != null) {
       runningPoints -= 30;
