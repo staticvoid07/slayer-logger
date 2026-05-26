@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool, init } = require('./db');
 const { renderPage } = require('./ui');
+const { renderStats } = require('./stats');
 
 const app = express();
 app.use(express.json());
@@ -14,7 +15,7 @@ app.post('/webhook', async (req, res) => {
     return res.status(400).json({ error: 'Invalid JSON body' });
   }
 
-  const { username, timestamp, message_type, monster, amount, tasks, points } = body;
+  const { username, timestamp, message_type, monster, amount, tasks, points, xp } = body;
 
   if (!username || !timestamp || !message_type || !monster || amount == null) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -38,8 +39,8 @@ app.post('/webhook', async (req, res) => {
 
   try {
     await pool.query(
-      `INSERT INTO events (username, occurred_at, message_type, monster, amount, tasks, points, raw)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      `INSERT INTO events (username, occurred_at, message_type, monster, amount, tasks, points, xp, raw)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         username,
         occurredAt,
@@ -48,6 +49,7 @@ app.post('/webhook', async (req, res) => {
         amount,
         tasks ?? null,
         points ?? null,
+        xp ?? null,
         JSON.stringify(body),
       ]
     );
@@ -116,6 +118,107 @@ app.get('/', async (req, res) => {
     }));
   } catch (err) {
     console.error('Query failed:', err);
+    res.status(500).send('Internal server error');
+  }
+});
+
+app.get('/stats', async (req, res) => {
+  try {
+    const username = req.query.username || null;
+    const dateFrom = req.query.date_from || null;
+    const dateTo = req.query.date_to || null;
+
+    const usernamesResult = await pool.query(
+      `SELECT DISTINCT username FROM events ORDER BY username`
+    );
+    const usernames = usernamesResult.rows.map(r => r.username);
+
+    if (!username) {
+      return res.send(renderStats({ username: null, dateFrom, dateTo, usernames, stats: null }));
+    }
+
+    const conditions = [`username = $1`];
+    const params = [username];
+
+    if (dateFrom) {
+      params.push(dateFrom);
+      conditions.push(`occurred_at >= $${params.length}::date`);
+    }
+    if (dateTo) {
+      params.push(dateTo);
+      conditions.push(`occurred_at < ($${params.length}::date + interval '1 day')`);
+    }
+
+    const where = `WHERE ${conditions.join(' AND ')}`;
+
+    // Fetch all relevant events for this player in order
+    const { rows: events } = await pool.query(
+      `SELECT * FROM events ${where} ORDER BY occurred_at ASC`,
+      params
+    );
+
+    // --- Completed tasks: kills and xp per monster ---
+    const completedByMonster = {};
+    let totalXp = 0;
+    let totalPoints = 0;
+    const completedStreaks = [];
+
+    for (const e of events) {
+      if (e.message_type === 'task completed') {
+        const m = e.monster.toLowerCase();
+        if (!completedByMonster[m]) completedByMonster[m] = { kills: 0, xp: 0, completions: 0 };
+        completedByMonster[m].kills += e.amount;
+        completedByMonster[m].xp += e.xp ?? 0;
+        completedByMonster[m].completions += 1;
+        totalXp += e.xp ?? 0;
+        totalPoints += e.points ?? 0;
+        if (e.tasks != null) completedStreaks.push(e.tasks);
+      }
+    }
+
+    // --- Gap detection: missing streak numbers ---
+    const sortedStreaks = [...new Set(completedStreaks)].sort((a, b) => a - b);
+    const gaps = [];
+    for (let i = 1; i < sortedStreaks.length; i++) {
+      const prev = sortedStreaks[i - 1];
+      const curr = sortedStreaks[i];
+      for (let missing = prev + 1; missing < curr; missing++) {
+        gaps.push(missing);
+      }
+    }
+
+    // --- Skip detection ---
+    // A task is skipped when a 'new task' is followed by another 'new task' or a
+    // 'task completed' for a DIFFERENT monster before the first one is completed.
+    const skippedByMonster = {};
+    let pendingTask = null; // { monster, occurred_at }
+
+    for (const e of events) {
+      if (e.message_type === 'new task') {
+        if (pendingTask && pendingTask.monster.toLowerCase() !== e.monster.toLowerCase()) {
+          const m = pendingTask.monster.toLowerCase();
+          skippedByMonster[m] = (skippedByMonster[m] ?? 0) + 1;
+        }
+        pendingTask = e;
+      } else if (e.message_type === 'task completed') {
+        // Whether it matches or not, the task slot is now cleared
+        pendingTask = null;
+      }
+    }
+
+    const stats = {
+      completedByMonster,
+      skippedByMonster,
+      totalXp,
+      totalPoints,
+      gaps,
+      totalCompleted: completedStreaks.length,
+      totalSkipped: Object.values(skippedByMonster).reduce((a, b) => a + b, 0),
+    };
+
+    res.send(renderStats({ username, dateFrom, dateTo, usernames, stats }));
+  } catch (err) {
+    console.error('Stats query failed:', err);
     res.status(500).send('Internal server error');
   }
 });

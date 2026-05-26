@@ -32,13 +32,7 @@ function row(e) {
   </tr>`;
 }
 
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+const { escHtml } = require('./helpers');
 
 function pagerLink(page, label, current, query) {
   const q = new URLSearchParams({ ...query, page });
@@ -78,6 +72,10 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
     h1 { font-size: 1.5rem; font-weight: 700; color: #f9fafb; }
     .header { background: #1f2937; border-bottom: 1px solid #374151; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
     .skull { height: 32px; width: auto; image-rendering: pixelated; }
+    .nav { display:flex; gap:1rem; margin-left:auto; }
+    .nav a { color:#9ca3af; text-decoration:none; font-size:0.875rem; }
+    .nav a:hover { color:#f9fafb; }
+    .nav a.active { color:#3b82f6; font-weight:600; }
     .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
     .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: flex-end; }
     label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: #9ca3af; }
@@ -99,6 +97,10 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
   <div class="header">
     <img class="skull" src="https://oldschool.runescape.wiki/images/Slayer_icon.png" alt="Slayer">
     <h1>Slayer Logger</h1>
+    <nav class="nav">
+      <a href="/" class="active">Events</a>
+      <a href="/stats">Stats</a>
+    </nav>
   </div>
   <div class="container">
     <form class="filters" method="get" action="/">
