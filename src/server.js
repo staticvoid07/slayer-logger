@@ -84,11 +84,11 @@ app.get('/', async (req, res) => {
     }
     if (dateFrom) {
       params.push(dateFrom);
-      conditions.push(`occurred_at >= $${params.length}::date`);
+      conditions.push(`occurred_at >= $${params.length}::timestamptz`);
     }
     if (dateTo) {
       params.push(dateTo);
-      conditions.push(`occurred_at < ($${params.length}::date + interval '1 day')`);
+      conditions.push(`occurred_at <= $${params.length}::timestamptz`);
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -143,11 +143,11 @@ app.get('/stats', async (req, res) => {
 
     if (dateFrom) {
       params.push(dateFrom);
-      conditions.push(`occurred_at >= $${params.length}::date`);
+      conditions.push(`occurred_at >= $${params.length}::timestamptz`);
     }
     if (dateTo) {
       params.push(dateTo);
-      conditions.push(`occurred_at < ($${params.length}::date + interval '1 day')`);
+      conditions.push(`occurred_at <= $${params.length}::timestamptz`);
     }
 
     const where = `WHERE ${conditions.join(' AND ')}`;
