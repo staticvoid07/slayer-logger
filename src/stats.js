@@ -48,8 +48,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
           <td style="text-align:center">${taskCount}</td>
-          <td style="text-align:center">${d.completions}</td>
-          <td style="text-align:center">${pct}%</td>
+          <td style="text-align:center">${d.completions} (${pct}%)</td>
           <td style="text-align:center">${totalAssigned}</td>
           <td style="text-align:center">${d.kills.toLocaleString()}${assignedByMonster[monster] ? ` (${(d.kills / assignedByMonster[monster]).toFixed(2)})` : ''}</td>
           <td style="text-align:center">${d.xp > 0 ? d.xp.toLocaleString() : '—'}</td>
@@ -65,8 +64,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
           <td style="text-align:center">${taskCountByMonster[monster] ?? count}</td>
-          <td style="text-align:center">0</td>
-          <td style="text-align:center">0%</td>
+          <td style="text-align:center">0 (0%)</td>
           <td style="text-align:center">${(assignedByMonster[monster] ?? 0).toLocaleString()}</td>
           <td style="text-align:center">0 (0.00)</td>
           <td style="text-align:center">—</td>
@@ -91,14 +89,13 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
               <th style="${thStyle()}text-align:left">Monster</th>
               <th style="${thStyle()}text-align:center">Tasks</th>
               <th style="${thStyle()}text-align:center">Completed</th>
-              <th style="${thStyle()}text-align:center">Completion %</th>
               <th style="${thStyle()}text-align:center">Assigned</th>
               <th style="${thStyle()}text-align:center">Kills</th>
               <th style="${thStyle()}text-align:center">XP</th>
             </tr>
           </thead>
           <tbody>
-            ${monsterRows || '<tr><td colspan="7" style="text-align:center;color:#4b5563;padding:2rem">No completed tasks</td></tr>'}
+            ${monsterRows || '<tr><td colspan="6" style="text-align:center;color:#4b5563;padding:2rem">No completed tasks</td></tr>'}
             ${skippedOnly}
           </tbody>
         </table>
