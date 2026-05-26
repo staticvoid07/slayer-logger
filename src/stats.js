@@ -22,7 +22,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
     body = `<p style="color:#6b7280;margin-top:2rem;text-align:center">No data found.</p>`;
   } else {
     const {
-      completedByMonster, assignedByMonster, skippedByMonster,
+      completedByMonster, assignedByMonster, taskCountByMonster, skippedByMonster,
       totalXp, totalPoints, latestTotalPoints, overallXpH, gaps,
       totalCompleted, totalSkipped,
     } = stats;
@@ -41,15 +41,14 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
     const monsterRows = Object.entries(completedByMonster)
       .sort((a, b) => b[1].completions - a[1].completions)
       .map(([monster, d]) => {
-        const skips = skippedByMonster[monster] ?? 0;
-        const assigned = d.completions + skips;
-        const pct = assigned > 0 ? ((d.completions / assigned) * 100).toFixed(1) : '100.0';
+        const taskCount = taskCountByMonster[monster] ?? 0;
+        const pct = taskCount > 0 ? ((d.completions / taskCount) * 100).toFixed(1) : '100.0';
         const totalAssigned = (assignedByMonster[monster] ?? 0).toLocaleString();
         return `
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
+          <td style="text-align:center">${taskCount}</td>
           <td style="text-align:center">${d.completions}</td>
-          <td style="text-align:center">${skips || '—'}</td>
           <td style="text-align:center">${pct}%</td>
           <td style="text-align:center">${totalAssigned}</td>
           <td style="text-align:center">${d.kills.toLocaleString()}${assignedByMonster[monster] ? ` (${(d.kills / assignedByMonster[monster]).toFixed(2)})` : ''}</td>
@@ -65,8 +64,8 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
       .map(([monster, count]) => `
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
+          <td style="text-align:center">${taskCountByMonster[monster] ?? count}</td>
           <td style="text-align:center">0</td>
-          <td style="text-align:center">${count}</td>
           <td style="text-align:center">0%</td>
           <td style="text-align:center">${(assignedByMonster[monster] ?? 0).toLocaleString()}</td>
           <td style="text-align:center">0 (0.00)</td>
@@ -90,8 +89,8 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
           <thead>
             <tr style="background:#1f2937">
               <th style="${thStyle()}text-align:left">Monster</th>
+              <th style="${thStyle()}text-align:center">Tasks</th>
               <th style="${thStyle()}text-align:center">Completed</th>
-              <th style="${thStyle()}text-align:center">Skipped</th>
               <th style="${thStyle()}text-align:center">Completion %</th>
               <th style="${thStyle()}text-align:center">Assigned</th>
               <th style="${thStyle()}text-align:center">Kills</th>
