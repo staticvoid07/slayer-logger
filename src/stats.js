@@ -48,11 +48,11 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
         return `
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
-          <td style="text-align:center">${totalAssigned}</td>
           <td style="text-align:center">${d.completions}</td>
           <td style="text-align:center">${skips || '—'}</td>
           <td style="text-align:center">${pct}%</td>
           <td style="text-align:center">${d.kills.toLocaleString()}</td>
+          <td style="text-align:center">${totalAssigned}</td>
           <td style="text-align:center">${d.xp > 0 ? d.xp.toLocaleString() : '—'}</td>
         </tr>`;
       })
@@ -65,11 +65,11 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
       .map(([monster, count]) => `
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
-          <td style="text-align:center">${(assignedByMonster[monster] ?? 0).toLocaleString()}</td>
           <td style="text-align:center">0</td>
           <td style="text-align:center">${count}</td>
           <td style="text-align:center">0%</td>
           <td style="text-align:center">0</td>
+          <td style="text-align:center">${(assignedByMonster[monster] ?? 0).toLocaleString()}</td>
           <td style="text-align:center">—</td>
         </tr>`)
       .join('');
@@ -90,11 +90,11 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
           <thead>
             <tr style="background:#1f2937">
               <th style="${thStyle()}text-align:left">Monster</th>
-              <th style="${thStyle()}text-align:center">Assigned</th>
               <th style="${thStyle()}text-align:center">Completed</th>
               <th style="${thStyle()}text-align:center">Skipped</th>
               <th style="${thStyle()}text-align:center">Completion %</th>
               <th style="${thStyle()}text-align:center">Kills</th>
+              <th style="${thStyle()}text-align:center">Assigned</th>
               <th style="${thStyle()}text-align:center">XP</th>
             </tr>
           </thead>
