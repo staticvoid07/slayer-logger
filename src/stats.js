@@ -22,7 +22,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
     body = `<p style="color:#6b7280;margin-top:2rem;text-align:center">No data found.</p>`;
   } else {
     const {
-      completedByMonster, skippedByMonster,
+      completedByMonster, assignedByMonster, skippedByMonster,
       totalXp, totalPoints, latestTotalPoints, overallXpH, gaps,
       totalCompleted, totalSkipped,
     } = stats;
@@ -44,10 +44,11 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
         const skips = skippedByMonster[monster] ?? 0;
         const assigned = d.completions + skips;
         const pct = assigned > 0 ? ((d.completions / assigned) * 100).toFixed(1) : '100.0';
+        const totalAssigned = (assignedByMonster[monster] ?? 0).toLocaleString();
         return `
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
-          <td style="text-align:center">${assigned}</td>
+          <td style="text-align:center">${totalAssigned}</td>
           <td style="text-align:center">${d.completions}</td>
           <td style="text-align:center">${skips || '—'}</td>
           <td style="text-align:center">${pct}%</td>
@@ -64,7 +65,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
       .map(([monster, count]) => `
         <tr>
           <td style="text-transform:capitalize">${escHtml(monster)}</td>
-          <td style="text-align:center">${count}</td>
+          <td style="text-align:center">${(assignedByMonster[monster] ?? 0).toLocaleString()}</td>
           <td style="text-align:center">0</td>
           <td style="text-align:center">${count}</td>
           <td style="text-align:center">0%</td>

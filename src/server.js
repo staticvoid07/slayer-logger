@@ -175,10 +175,13 @@ app.get('/stats', async (req, res) => {
 
     // Build a map of pending task start times keyed by monster (lowercase)
     const pendingStart = {};
+    const assignedByMonster = {}; // sum of assigned kill amounts per monster
 
     for (const e of events) {
       if (e.message_type === 'new task') {
-        pendingStart[e.monster.toLowerCase()] = new Date(e.occurred_at).getTime();
+        const m = e.monster.toLowerCase();
+        assignedByMonster[m] = (assignedByMonster[m] ?? 0) + e.amount;
+        pendingStart[m] = new Date(e.occurred_at).getTime();
       } else if (e.message_type === 'task completed') {
         const m = e.monster.toLowerCase();
         if (!completedByMonster[m]) completedByMonster[m] = { kills: 0, xp: 0, completions: 0, taskMs: 0, timedTasks: 0 };
@@ -239,6 +242,7 @@ app.get('/stats', async (req, res) => {
 
     const stats = {
       completedByMonster,
+      assignedByMonster,
       skippedByMonster,
       totalXp,
       totalPoints,
