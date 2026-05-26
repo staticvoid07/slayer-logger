@@ -1,4 +1,5 @@
-function badge(type) {
+function badge(type, isSkip) {
+  if (isSkip) return `<span style="background:#78350f;color:#fde68a;padding:2px 8px;border-radius:9999px;font-size:0.75rem;font-weight:600;white-space:nowrap">Skipped</span>`;
   const map = {
     'new task':       ['#3b82f6', 'New Task'],
     'task reminder':  ['#f59e0b', 'Reminder'],
@@ -16,7 +17,7 @@ function formatDate(d) {
   });
 }
 
-function row(e) {
+function row(e, isSkip, skipTotalPoints) {
   let pointsCell, taskCell;
   if (e.message_type === 'task completed') {
     const pts = e.points != null && e.total_points != null
@@ -24,16 +25,22 @@ function row(e) {
       : e.points != null ? `+${e.points}` : '—';
     pointsCell = `<td style="text-align:center">${pts}</td>`;
     taskCell = `<td style="text-align:center">${e.tasks ?? '—'}</td>`;
+  } else if (isSkip) {
+    const pts = skipTotalPoints != null
+      ? `-30 (${skipTotalPoints.toLocaleString()})`
+      : '-30';
+    pointsCell = `<td style="text-align:center;color:#ef4444">${pts}</td>`;
+    taskCell = `<td style="text-align:center">—</td>`;
   } else {
     pointsCell = `<td style="text-align:center">—</td>`;
     taskCell = `<td style="text-align:center">—</td>`;
   }
 
   return `
-  <tr>
+  <tr${isSkip ? ' style="background:#1c1008"' : ''}>
     <td>${formatDate(e.occurred_at)}</td>
     <td>${escHtml(e.username)}</td>
-    <td>${badge(e.message_type)}</td>
+    <td>${badge(e.message_type, isSkip)}</td>
     <td style="text-transform:capitalize">${escHtml(e.monster)}</td>
     <td style="text-align:center">${e.amount.toLocaleString()}</td>
     ${taskCell}
@@ -67,23 +74,30 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
     .map(u => `<option value="${escHtml(u)}"${u === username ? ' selected' : ''}>${escHtml(u)}</option>`)
     .join('');
 
-  // Build rows, inserting a skip indicator between consecutive new task events
-  // (events are newest-first, so a new task immediately after another new task = skip)
+  // Events are newest-first. A new task is a skip if the next event is also a new task.
+  // Track running total_points so we can show the deducted total on skip rows.
+  // We scan forward (oldest→newest) to maintain a running points total, then render newest-first.
+  let runningPoints = null;
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i];
+    if (e.message_type === 'task completed' && e.total_points != null) {
+      runningPoints = e.total_points;
+    }
+  }
+  // Build newest-first with skip detection
   const rowParts = [];
   for (let i = 0; i < events.length; i++) {
-    rowParts.push(row(events[i]));
-    if (
-      events[i].message_type === 'new task' &&
-      events[i + 1]?.message_type === 'new task'
-    ) {
-      rowParts.push(`
-      <tr style="background:#1c1008">
-        <td colspan="7" style="text-align:center;color:#f59e0b;font-size:0.8rem;padding:6px 12px;border-bottom:1px solid #1f2937">
-          <span style="background:#78350f;color:#fde68a;padding:2px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;margin-right:8px">Skipped</span>
-          ${escHtml(events[i].monster)} was skipped &mdash; <span style="color:#ef4444">−30 pts</span>
-        </td>
-      </tr>`);
+    const e = events[i];
+    const isSkip = e.message_type === 'new task' && events[i + 1]?.message_type === 'new task';
+    let skipTotalPoints = null;
+    if (isSkip && runningPoints != null) {
+      runningPoints -= 30;
+      skipTotalPoints = runningPoints;
     }
+    if (e.message_type === 'task completed' && e.total_points != null) {
+      runningPoints = e.total_points;
+    }
+    rowParts.push(row(e, isSkip, skipTotalPoints));
   }
   const rows = rowParts.join('');
 
