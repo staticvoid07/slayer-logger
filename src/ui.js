@@ -17,6 +17,21 @@ function formatDate(d) {
   });
 }
 
+function timestampCell(e) {
+  const receivedAt = new Date(e.received_at);
+  const occurredAt = new Date(e.occurred_at);
+  const diffMs = Math.abs(receivedAt - occurredAt);
+  const diffMins = Math.round(diffMs / 60000);
+
+  let warning = '';
+  if (diffMs > 5 * 60 * 1000) {
+    const sign = receivedAt > occurredAt ? '+' : '-';
+    warning = ` <span title="Event timestamp was ${sign}${diffMins} min from when it was received (plugin: ${formatDate(occurredAt)})"
+      style="cursor:help;color:#f59e0b;font-size:0.85rem">⚠</span>`;
+  }
+  return `<td>${formatDate(receivedAt)}${warning}</td>`;
+}
+
 function row(e, isSkip, skipTotalPoints) {
   let pointsCell, taskCell;
   if (e.message_type === 'task completed') {
@@ -38,7 +53,7 @@ function row(e, isSkip, skipTotalPoints) {
 
   return `
   <tr${isSkip ? ' style="background:#1c1008"' : ''}>
-    <td>${formatDate(e.occurred_at)}</td>
+    ${timestampCell(e)}
     <td>${escHtml(e.username)}</td>
     <td>${badge(e.message_type, isSkip)}</td>
     <td style="text-transform:capitalize">${escHtml(e.monster)}</td>
