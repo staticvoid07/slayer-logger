@@ -164,17 +164,24 @@ app.get('/stats', async (req, res) => {
       params
     );
 
-    // --- Completed tasks: kills and xp per monster ---
+    // --- Completed tasks: kills, xp, and duration per monster ---
     const completedByMonster = {};
     let totalXp = 0;
     let totalPoints = 0;
     let latestTotalPoints = null;
+    let totalTaskMs = 0;   // sum of milliseconds spent on completed tasks
+    let timedTasks = 0;    // number of tasks we have a duration for
     const completedStreaks = [];
 
+    // Build a map of pending task start times keyed by monster (lowercase)
+    const pendingStart = {};
+
     for (const e of events) {
-      if (e.message_type === 'task completed') {
+      if (e.message_type === 'new task') {
+        pendingStart[e.monster.toLowerCase()] = new Date(e.occurred_at).getTime();
+      } else if (e.message_type === 'task completed') {
         const m = e.monster.toLowerCase();
-        if (!completedByMonster[m]) completedByMonster[m] = { kills: 0, xp: 0, completions: 0 };
+        if (!completedByMonster[m]) completedByMonster[m] = { kills: 0, xp: 0, completions: 0, taskMs: 0, timedTasks: 0 };
         completedByMonster[m].kills += e.amount;
         completedByMonster[m].xp += e.xp ?? 0;
         completedByMonster[m].completions += 1;
@@ -182,6 +189,17 @@ app.get('/stats', async (req, res) => {
         totalPoints += e.points ?? 0;
         if (e.total_points != null) latestTotalPoints = e.total_points;
         if (e.tasks != null) completedStreaks.push(e.tasks);
+
+        if (pendingStart[m] != null && e.xp != null) {
+          const ms = new Date(e.occurred_at).getTime() - pendingStart[m];
+          if (ms > 0) {
+            completedByMonster[m].taskMs += ms;
+            completedByMonster[m].timedTasks += 1;
+            totalTaskMs += ms;
+            timedTasks += 1;
+          }
+        }
+        delete pendingStart[m];
       }
     }
 
@@ -215,12 +233,17 @@ app.get('/stats', async (req, res) => {
       }
     }
 
+    const overallXpH = timedTasks > 0
+      ? Math.round(totalXp / (totalTaskMs / 3_600_000))
+      : null;
+
     const stats = {
       completedByMonster,
       skippedByMonster,
       totalXp,
       totalPoints,
       latestTotalPoints,
+      overallXpH,
       gaps,
       totalCompleted: completedStreaks.length,
       totalSkipped: Object.values(skippedByMonster).reduce((a, b) => a + b, 0),

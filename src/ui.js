@@ -17,9 +17,17 @@ function formatDate(d) {
 }
 
 function row(e) {
-  const extra = e.message_type === 'task completed'
-    ? `<td style="text-align:center">${e.tasks ?? '—'}</td><td style="text-align:center">${e.points ?? '—'}</td><td style="text-align:center">${e.total_points ?? '—'}</td>`
-    : `<td style="text-align:center">—</td><td style="text-align:center">—</td><td style="text-align:center">—</td>`;
+  let pointsCell, taskCell;
+  if (e.message_type === 'task completed') {
+    const pts = e.points != null && e.total_points != null
+      ? `+${e.points} (${e.total_points.toLocaleString()})`
+      : e.points != null ? `+${e.points}` : '—';
+    pointsCell = `<td style="text-align:center">${pts}</td>`;
+    taskCell = `<td style="text-align:center">${e.tasks ?? '—'}</td>`;
+  } else {
+    pointsCell = `<td style="text-align:center">—</td>`;
+    taskCell = `<td style="text-align:center">—</td>`;
+  }
 
   return `
   <tr>
@@ -27,8 +35,9 @@ function row(e) {
     <td>${escHtml(e.username)}</td>
     <td>${badge(e.message_type)}</td>
     <td style="text-transform:capitalize">${escHtml(e.monster)}</td>
-    <td style="text-align:center">${e.amount}</td>
-    ${extra}
+    <td style="text-align:center">${e.amount.toLocaleString()}</td>
+    ${taskCell}
+    ${pointsCell}
   </tr>`;
 }
 
@@ -145,14 +154,13 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
           <th>Player</th>
           <th>Type</th>
           <th>Monster</th>
-          <th style="text-align:center">Amount</th>
+          <th style="text-align:center">Kills</th>
           <th style="text-align:center">Task #</th>
           <th style="text-align:center">Points</th>
-          <th style="text-align:center">Total Points</th>
         </tr>
       </thead>
       <tbody>
-        ${rows || '<tr><td colspan="8" class="empty">No events found</td></tr>'}
+        ${rows || '<tr><td colspan="7" class="empty">No events found</td></tr>'}
       </tbody>
     </table>
     ${totalPages > 1 ? `<div class="pager">${pager.join('')}</div>` : ''}
