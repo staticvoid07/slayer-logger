@@ -89,29 +89,27 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
     .map(u => `<option value="${escHtml(u)}"${u === username ? ' selected' : ''}>${escHtml(u)}</option>`)
     .join('');
 
-  // next_message_type comes from a server-side LEAD() window function scoped per username.
-  // A new task is a skip when the chronologically next event for that player is also a new task.
-  let runningPoints = null;
+  // Compute skip point totals oldest-to-newest (events array is newest-first so iterate reversed).
+  // For each skip, the total after deduction = total at that point in time - 30.
+  // We anchor from the nearest known total_points on a completion event.
+  const skipTotals = new Array(events.length).fill(null);
+  let pts = null;
   for (let i = events.length - 1; i >= 0; i--) {
-    if (events[i].message_type === 'task completed' && events[i].total_points != null) {
-      runningPoints = events[i].total_points;
-      break;
-    }
-  }
-  const rowParts = [];
-  for (let i = 0; i < events.length; i++) {
     const e = events[i];
-    const isSkip = e.message_type === 'new task' && e.next_message_type === 'new task';
-    let skipTotalPoints = null;
-    if (isSkip && runningPoints != null) {
-      runningPoints -= 30;
-      skipTotalPoints = runningPoints;
-    }
     if (e.message_type === 'task completed' && e.total_points != null) {
-      runningPoints = e.total_points;
+      pts = e.total_points;
     }
-    rowParts.push(row(e, isSkip, skipTotalPoints));
+    const isSkip = e.message_type === 'new task' && e.next_message_type === 'new task';
+    if (isSkip && pts != null) {
+      pts -= 30;
+      skipTotals[i] = pts;
+    }
   }
+
+  const rowParts = events.map((e, i) => {
+    const isSkip = e.message_type === 'new task' && e.next_message_type === 'new task';
+    return row(e, isSkip, skipTotals[i]);
+  });
   const rows = rowParts.join('');
 
   return `<!DOCTYPE html>
