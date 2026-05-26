@@ -67,7 +67,25 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
     .map(u => `<option value="${escHtml(u)}"${u === username ? ' selected' : ''}>${escHtml(u)}</option>`)
     .join('');
 
-  const rows = events.map(row).join('');
+  // Build rows, inserting a skip indicator between consecutive new task events
+  // (events are newest-first, so a new task immediately after another new task = skip)
+  const rowParts = [];
+  for (let i = 0; i < events.length; i++) {
+    rowParts.push(row(events[i]));
+    if (
+      events[i].message_type === 'new task' &&
+      events[i + 1]?.message_type === 'new task'
+    ) {
+      rowParts.push(`
+      <tr style="background:#1c1008">
+        <td colspan="7" style="text-align:center;color:#f59e0b;font-size:0.8rem;padding:6px 12px;border-bottom:1px solid #1f2937">
+          <span style="background:#78350f;color:#fde68a;padding:2px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;margin-right:8px">Skipped</span>
+          ${escHtml(events[i].monster)} was skipped &mdash; <span style="color:#ef4444">−30 pts</span>
+        </td>
+      </tr>`);
+    }
+  }
+  const rows = rowParts.join('');
 
   return `<!DOCTYPE html>
 <html lang="en">
