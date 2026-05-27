@@ -6,7 +6,7 @@ const { renderStats } = require('./stats');
 const app = express();
 app.use(express.json());
 
-const VALID_TYPES = new Set(['new task', 'task completed', 'task skipped', 'cape perk proc', 'task reminder']);
+const VALID_TYPES = new Set(['new task', 'task completed', 'task skipped', 'superior spawn', 'cape perk proc', 'task reminder']);
 
 app.post('/webhook', async (req, res) => {
   const body = req.body;
@@ -188,6 +188,7 @@ app.get('/stats', async (req, res) => {
     const taskCountByMonster = {};
     const skippedByMonster = {};
     let capeProcs = 0;
+    let superiorSpawns = 0;
 
     for (const e of events) {
       if (e.message_type === 'new task') {
@@ -221,6 +222,8 @@ app.get('/stats', async (req, res) => {
         const m = e.monster.toLowerCase();
         skippedByMonster[m] = (skippedByMonster[m] ?? 0) + 1;
         if (e.total_points != null) latestTotalPoints = e.total_points;
+      } else if (e.message_type === 'superior spawn') {
+        superiorSpawns++;
       } else if (e.message_type === 'cape perk proc') {
         capeProcs++;
         if (e.total_points != null) latestTotalPoints = e.total_points;
@@ -266,6 +269,7 @@ app.get('/stats', async (req, res) => {
       overallXpH,
       currentTask,
       capeProcs,
+      superiorSpawns,
       gaps,
       totalCompleted: completedStreaks.length,
       totalSkipped: Object.values(skippedByMonster).reduce((a, b) => a + b, 0),

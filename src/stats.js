@@ -23,7 +23,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
   } else {
     const {
       completedByMonster, assignedByMonster, taskCountByMonster, skippedByMonster,
-      totalXp, totalPoints, latestTotalPoints, overallXpH, currentTask, capeProcs, gaps,
+      totalXp, totalPoints, latestTotalPoints, overallXpH, currentTask, capeProcs, superiorSpawns, gaps,
       totalCompleted, totalSkipped,
     } = stats;
 
@@ -47,6 +47,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
     const cards = [
       statCard('Tasks Completed', totalCompleted.toLocaleString()),
       statCard('Tasks Skipped', totalSkipped.toLocaleString()),
+      statCard('Superiors', superiorSpawns.toLocaleString()),
       statCard('Cape Perks', capeProcs.toLocaleString()),
       statCard('Total XP', totalXp > 0 ? totalXp.toLocaleString() : '—'),
       statCard('Avg XP/hr', overallXpH != null ? overallXpH.toLocaleString() : '—'),

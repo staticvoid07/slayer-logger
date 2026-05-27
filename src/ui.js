@@ -3,6 +3,7 @@ function badge(type) {
     'new task':       ['#3b82f6', 'New Task'],
     'task completed': ['#22c55e', 'Completed'],
     'task skipped':   ['#78350f', 'Skipped', '#fde68a'],
+    'superior spawn': ['#b45309', 'Superior', '#fef3c7'],
     'cape perk proc': ['#7c3aed', 'Cape Perk'],
     'task reminder':  ['#f59e0b', 'Reminder'],
   };
@@ -42,6 +43,7 @@ function monsterLabel(e) {
 function row(e, skipTotalPoints) {
   const isSkip = e.message_type === 'task skipped';
   const isCape = e.message_type === 'cape perk proc';
+  const isSuperior = e.message_type === 'superior spawn';
 
   let pointsCell, taskCell, killsCell;
 
@@ -60,6 +62,10 @@ function row(e, skipTotalPoints) {
     pointsCell  = `<td style="text-align:center;color:#ef4444">${pts}</td>`;
     taskCell    = `<td style="text-align:center">${e.tasks_completed ?? '—'}</td>`;
     killsCell   = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
+  } else if (isSuperior) {
+    pointsCell  = `<td style="text-align:center">—</td>`;
+    taskCell    = `<td style="text-align:center">${e.tasks_completed ?? '—'}</td>`;
+    killsCell   = `<td style="text-align:center">—</td>`;
   } else if (isCape) {
     const total = e.total_points != null ? `(${e.total_points.toLocaleString()})` : '—';
     pointsCell  = `<td style="text-align:center;color:#a78bfa">${total}</td>`;
@@ -72,7 +78,7 @@ function row(e, skipTotalPoints) {
     killsCell   = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   }
 
-  const rowStyle = isSkip ? ' style="background:#1c1008"' : isCape ? ' style="background:#1e1b2e"' : '';
+  const rowStyle = isSkip ? ' style="background:#1c1008"' : isSuperior ? ' style="background:#1c1204"' : isCape ? ' style="background:#1e1b2e"' : '';
 
   return `
   <tr${rowStyle}>
@@ -188,6 +194,7 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
           <option value="new task"${type === 'new task' ? ' selected' : ''}>New Task</option>
           <option value="task completed"${type === 'task completed' ? ' selected' : ''}>Completed</option>
           <option value="task skipped"${type === 'task skipped' ? ' selected' : ''}>Skipped</option>
+          <option value="superior spawn"${type === 'superior spawn' ? ' selected' : ''}>Superior</option>
           <option value="cape perk proc"${type === 'cape perk proc' ? ' selected' : ''}>Cape Perk</option>
         </select>
       </label>
