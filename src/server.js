@@ -218,10 +218,10 @@ app.get('/stats', async (req, res) => {
       } else if (e.message_type === 'task skipped') {
         const m = e.monster.toLowerCase();
         skippedByMonster[m] = (skippedByMonster[m] ?? 0) + 1;
-        if (e.points != null) latestTotalPoints = e.points;
+        if (e.total_points != null) latestTotalPoints = e.total_points;
       } else if (e.message_type === 'cape perk proc') {
         capeProcs++;
-        if (e.points != null) latestTotalPoints = e.points;
+        if (e.total_points != null) latestTotalPoints = e.total_points;
       }
     }
 

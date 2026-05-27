@@ -53,19 +53,20 @@ function row(e, skipTotalPoints) {
     taskCell   = `<td style="text-align:center">${e.tasks ?? '—'}</td>`;
     killsCell  = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   } else if (isSkip) {
-    // points field on skip = running total after deduction
-    const total = e.points != null ? e.points.toLocaleString() : (skipTotalPoints != null ? skipTotalPoints.toLocaleString() : null);
+    // total_points on skip = running total after deduction
+    const total = e.total_points != null ? e.total_points.toLocaleString() : (skipTotalPoints != null ? skipTotalPoints.toLocaleString() : null);
     const pts = total ? `-30 (${total})` : '-30';
     pointsCell  = `<td style="text-align:center;color:#ef4444">${pts}</td>`;
     taskCell    = `<td style="text-align:center">${e.tasks_completed ?? '—'}</td>`;
     killsCell   = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   } else if (isCape) {
-    const total = e.points != null ? `(${e.points.toLocaleString()})` : '—';
+    const total = e.total_points != null ? `(${e.total_points.toLocaleString()})` : '—';
     pointsCell  = `<td style="text-align:center;color:#a78bfa">${total}</td>`;
     taskCell    = `<td style="text-align:center">${e.tasks_completed ?? '—'}</td>`;
     killsCell   = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   } else {
-    pointsCell  = `<td style="text-align:center">—</td>`;
+    const newTaskPts = e.message_type === 'new task' && e.total_points != null ? `(${e.total_points.toLocaleString()})` : '—';
+    pointsCell  = `<td style="text-align:center;color:#6b7280">${newTaskPts}</td>`;
     taskCell    = `<td style="text-align:center">—</td>`;
     killsCell   = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   }
