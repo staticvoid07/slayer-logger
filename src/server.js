@@ -15,7 +15,11 @@ app.post('/webhook', async (req, res) => {
     return res.status(400).json({ error: 'Invalid JSON body' });
   }
 
-  const { username, timestamp, message_type, monster, amount, tasks, points, xp, total_points } = body;
+  const {
+    username, timestamp, message_type,
+    monster, amount, tasks, points, xp, total_points,
+    area, tasks_completed, slayer_master,
+  } = body;
 
   if (!username || !timestamp || !message_type) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -25,12 +29,7 @@ app.post('/webhook', async (req, res) => {
     return res.status(400).json({ error: `Unknown message_type: ${message_type}` });
   }
 
-  // cape perk proc has no monster/amount
-  const needsMonster = message_type !== 'cape perk proc';
-  if (needsMonster && (!monster || amount == null)) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-  if (needsMonster && !Number.isInteger(amount)) {
+  if (amount != null && !Number.isInteger(amount)) {
     return res.status(400).json({ error: 'amount must be an integer' });
   }
 
@@ -44,8 +43,9 @@ app.post('/webhook', async (req, res) => {
 
   try {
     await pool.query(
-      `INSERT INTO events (username, occurred_at, message_type, monster, amount, tasks, points, xp, total_points, raw)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      `INSERT INTO events
+         (username, occurred_at, message_type, monster, amount, tasks, points, xp, total_points, area, tasks_completed, slayer_master, raw)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
       [
         username,
         occurredAt,
@@ -56,6 +56,9 @@ app.post('/webhook', async (req, res) => {
         points ?? null,
         xp ?? null,
         total_points ?? null,
+        area || null,
+        tasks_completed ?? null,
+        slayer_master ?? null,
         JSON.stringify(body),
       ]
     );
@@ -215,8 +218,10 @@ app.get('/stats', async (req, res) => {
       } else if (e.message_type === 'task skipped') {
         const m = e.monster.toLowerCase();
         skippedByMonster[m] = (skippedByMonster[m] ?? 0) + 1;
+        if (e.points != null) latestTotalPoints = e.points;
       } else if (e.message_type === 'cape perk proc') {
         capeProcs++;
+        if (e.points != null) latestTotalPoints = e.points;
       }
     }
 

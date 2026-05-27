@@ -33,11 +33,17 @@ function timestampCell(e) {
   return `<td>${formatDate(receivedAt)}${warning}</td>`;
 }
 
+function monsterLabel(e) {
+  const name = e.monster ? `<span style="text-transform:capitalize">${escHtml(e.monster)}</span>` : '<span style="color:#6b7280">—</span>';
+  const area = e.area ? ` <span style="font-size:0.72rem;color:#9ca3af;background:#374151;padding:1px 6px;border-radius:4px">${escHtml(e.area)}</span>` : '';
+  return `<td>${name}${area}</td>`;
+}
+
 function row(e, skipTotalPoints) {
   const isSkip = e.message_type === 'task skipped';
   const isCape = e.message_type === 'cape perk proc';
 
-  let pointsCell, taskCell, monsterCell, killsCell;
+  let pointsCell, taskCell, killsCell;
 
   if (e.message_type === 'task completed') {
     const pts = e.points != null && e.total_points != null
@@ -45,24 +51,23 @@ function row(e, skipTotalPoints) {
       : e.points != null ? `+${e.points}` : '—';
     pointsCell = `<td style="text-align:center">${pts}</td>`;
     taskCell   = `<td style="text-align:center">${e.tasks ?? '—'}</td>`;
-    monsterCell = `<td style="text-transform:capitalize">${escHtml(e.monster)}</td>`;
-    killsCell  = `<td style="text-align:center">${e.amount.toLocaleString()}</td>`;
+    killsCell  = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   } else if (isSkip) {
-    const pts = skipTotalPoints != null ? `-30 (${skipTotalPoints.toLocaleString()})` : '-30';
+    // points field on skip = running total after deduction
+    const total = e.points != null ? e.points.toLocaleString() : (skipTotalPoints != null ? skipTotalPoints.toLocaleString() : null);
+    const pts = total ? `-30 (${total})` : '-30';
     pointsCell  = `<td style="text-align:center;color:#ef4444">${pts}</td>`;
-    taskCell    = `<td style="text-align:center">—</td>`;
-    monsterCell = `<td style="text-transform:capitalize">${escHtml(e.monster)}</td>`;
-    killsCell   = `<td style="text-align:center">${e.amount.toLocaleString()}</td>`;
+    taskCell    = `<td style="text-align:center">${e.tasks_completed ?? '—'}</td>`;
+    killsCell   = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   } else if (isCape) {
-    pointsCell  = `<td style="text-align:center">—</td>`;
-    taskCell    = `<td style="text-align:center">—</td>`;
-    monsterCell = `<td style="color:#6b7280;font-style:italic">—</td>`;
-    killsCell   = `<td style="text-align:center">—</td>`;
+    const total = e.points != null ? `(${e.points.toLocaleString()})` : '—';
+    pointsCell  = `<td style="text-align:center;color:#a78bfa">${total}</td>`;
+    taskCell    = `<td style="text-align:center">${e.tasks_completed ?? '—'}</td>`;
+    killsCell   = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   } else {
     pointsCell  = `<td style="text-align:center">—</td>`;
     taskCell    = `<td style="text-align:center">—</td>`;
-    monsterCell = `<td style="text-transform:capitalize">${escHtml(e.monster)}</td>`;
-    killsCell   = `<td style="text-align:center">${e.amount.toLocaleString()}</td>`;
+    killsCell   = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   }
 
   const rowStyle = isSkip ? ' style="background:#1c1008"' : isCape ? ' style="background:#1e1b2e"' : '';
@@ -72,7 +77,7 @@ function row(e, skipTotalPoints) {
     ${timestampCell(e)}
     <td>${escHtml(e.username)}</td>
     <td>${badge(e.message_type)}</td>
-    ${monsterCell}
+    ${monsterLabel(e)}
     ${killsCell}
     ${taskCell}
     ${pointsCell}
@@ -105,14 +110,14 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
     .map(u => `<option value="${escHtml(u)}"${u === username ? ' selected' : ''}>${escHtml(u)}</option>`)
     .join('');
 
-  // Compute running points total for skip rows (oldest-to-newest, array is newest-first).
-  // Anchor from task completed total_points, subtract 30 per skip going backwards.
+  // skipTotals is a fallback for old events that predate the points field on task skipped.
+  // New events carry e.points directly on the skip row.
   const skipTotals = new Array(events.length).fill(null);
   let pts = null;
   for (let i = events.length - 1; i >= 0; i--) {
     const e = events[i];
     if (e.message_type === 'task completed' && e.total_points != null) pts = e.total_points;
-    if (e.message_type === 'task skipped' && pts != null) {
+    if (e.message_type === 'task skipped' && e.points == null && pts != null) {
       pts -= 30;
       skipTotals[i] = pts;
     }
