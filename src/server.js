@@ -6,7 +6,7 @@ const { renderStats } = require('./stats');
 const app = express();
 app.use(express.json());
 
-const VALID_TYPES = new Set(['new task', 'task reminder', 'task completed']);
+const VALID_TYPES = new Set(['new task', 'task completed', 'task skipped', 'cape perk proc', 'task reminder']);
 
 app.post('/webhook', async (req, res) => {
   const body = req.body;
@@ -17,7 +17,7 @@ app.post('/webhook', async (req, res) => {
 
   const { username, timestamp, message_type, monster, amount, tasks, points, xp, total_points } = body;
 
-  if (!username || !timestamp || !message_type || !monster || amount == null) {
+  if (!username || !timestamp || !message_type) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -25,7 +25,12 @@ app.post('/webhook', async (req, res) => {
     return res.status(400).json({ error: `Unknown message_type: ${message_type}` });
   }
 
-  if (!Number.isInteger(amount)) {
+  // cape perk proc has no monster/amount
+  const needsMonster = message_type !== 'cape perk proc';
+  if (needsMonster && (!monster || amount == null)) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (needsMonster && !Number.isInteger(amount)) {
     return res.status(400).json({ error: 'amount must be an integer' });
   }
 
@@ -45,8 +50,8 @@ app.post('/webhook', async (req, res) => {
         username,
         occurredAt,
         message_type,
-        monster,
-        amount,
+        monster ?? null,
+        amount ?? null,
         tasks ?? null,
         points ?? null,
         xp ?? null,
@@ -93,12 +98,9 @@ app.get('/', async (req, res) => {
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    // Use a window function to peek at the next event per username (chronologically)
-    // so we can flag new task events that were never followed by a completion — skips.
     const [eventsResult, countResult, usernamesResult] = await Promise.all([
       pool.query(
-        `SELECT *, LEAD(message_type) OVER (PARTITION BY username ORDER BY occurred_at) AS next_message_type
-         FROM events ${where} ORDER BY occurred_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+        `SELECT * FROM events ${where} ORDER BY occurred_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
         [...params, limit, offset]
       ),
       pool.query(`SELECT COUNT(*) FROM events ${where}`, params),
@@ -178,8 +180,10 @@ app.get('/stats', async (req, res) => {
 
     // Build a map of pending task start times keyed by monster (lowercase)
     const pendingStart = {};
-    const assignedByMonster = {}; // sum of assigned kill amounts per monster
-    const taskCountByMonster = {}; // number of times each monster was assigned
+    const assignedByMonster = {};
+    const taskCountByMonster = {};
+    const skippedByMonster = {};
+    let capeProcs = 0;
 
     for (const e of events) {
       if (e.message_type === 'new task') {
@@ -208,6 +212,11 @@ app.get('/stats', async (req, res) => {
           }
         }
         delete pendingStart[m];
+      } else if (e.message_type === 'task skipped') {
+        const m = e.monster.toLowerCase();
+        skippedByMonster[m] = (skippedByMonster[m] ?? 0) + 1;
+      } else if (e.message_type === 'cape perk proc') {
+        capeProcs++;
       }
     }
 
@@ -222,24 +231,6 @@ app.get('/stats', async (req, res) => {
       }
     }
 
-    // --- Skip detection ---
-    // A task is skipped when a 'new task' is followed by another 'new task' or a
-    // 'task completed' for a DIFFERENT monster before the first one is completed.
-    const skippedByMonster = {};
-    let pendingTask = null; // { monster, occurred_at }
-
-    for (const e of events) {
-      if (e.message_type === 'new task') {
-        if (pendingTask && pendingTask.monster.toLowerCase() !== e.monster.toLowerCase()) {
-          const m = pendingTask.monster.toLowerCase();
-          skippedByMonster[m] = (skippedByMonster[m] ?? 0) + 1;
-        }
-        pendingTask = e;
-      } else if (e.message_type === 'task completed') {
-        // Whether it matches or not, the task slot is now cleared
-        pendingTask = null;
-      }
-    }
 
     const overallXpH = timedTasks > 0
       ? Math.round(totalXp / (totalTaskMs / 3_600_000))
@@ -253,7 +244,7 @@ app.get('/stats', async (req, res) => {
     );
     let currentTask = null;
     for (const e of recentEvents) {
-      if (e.message_type === 'task completed') break;
+      if (e.message_type === 'task completed' || e.message_type === 'task skipped') break;
       if (e.message_type === 'new task') { currentTask = e; break; }
     }
 
@@ -267,6 +258,7 @@ app.get('/stats', async (req, res) => {
       latestTotalPoints,
       overallXpH,
       currentTask,
+      capeProcs,
       gaps,
       totalCompleted: completedStreaks.length,
       totalSkipped: Object.values(skippedByMonster).reduce((a, b) => a + b, 0),

@@ -1,12 +1,13 @@
-function badge(type, isSkip) {
-  if (isSkip) return `<span style="background:#78350f;color:#fde68a;padding:2px 8px;border-radius:9999px;font-size:0.75rem;font-weight:600;white-space:nowrap">Skipped</span>`;
+function badge(type) {
   const map = {
     'new task':       ['#3b82f6', 'New Task'],
-    'task reminder':  ['#f59e0b', 'Reminder'],
     'task completed': ['#22c55e', 'Completed'],
+    'task skipped':   ['#78350f', 'Skipped', '#fde68a'],
+    'cape perk proc': ['#7c3aed', 'Cape Perk'],
+    'task reminder':  ['#f59e0b', 'Reminder'],
   };
-  const [color, label] = map[type] || ['#6b7280', type];
-  return `<span style="background:${color};color:#fff;padding:2px 8px;border-radius:9999px;font-size:0.75rem;font-weight:600;white-space:nowrap">${label}</span>`;
+  const [bg, label, color = '#fff'] = map[type] || ['#6b7280', type];
+  return `<span style="background:${bg};color:${color};padding:2px 8px;border-radius:9999px;font-size:0.75rem;font-weight:600;white-space:nowrap">${label}</span>`;
 }
 
 function formatDate(d) {
@@ -32,32 +33,47 @@ function timestampCell(e) {
   return `<td>${formatDate(receivedAt)}${warning}</td>`;
 }
 
-function row(e, isSkip, skipTotalPoints) {
-  let pointsCell, taskCell;
+function row(e, skipTotalPoints) {
+  const isSkip = e.message_type === 'task skipped';
+  const isCape = e.message_type === 'cape perk proc';
+
+  let pointsCell, taskCell, monsterCell, killsCell;
+
   if (e.message_type === 'task completed') {
     const pts = e.points != null && e.total_points != null
       ? `+${e.points} (${e.total_points.toLocaleString()})`
       : e.points != null ? `+${e.points}` : '—';
     pointsCell = `<td style="text-align:center">${pts}</td>`;
-    taskCell = `<td style="text-align:center">${e.tasks ?? '—'}</td>`;
+    taskCell   = `<td style="text-align:center">${e.tasks ?? '—'}</td>`;
+    monsterCell = `<td style="text-transform:capitalize">${escHtml(e.monster)}</td>`;
+    killsCell  = `<td style="text-align:center">${e.amount.toLocaleString()}</td>`;
   } else if (isSkip) {
-    const pts = skipTotalPoints != null
-      ? `-30 (${skipTotalPoints.toLocaleString()})`
-      : '-30';
-    pointsCell = `<td style="text-align:center;color:#ef4444">${pts}</td>`;
-    taskCell = `<td style="text-align:center">—</td>`;
+    const pts = skipTotalPoints != null ? `-30 (${skipTotalPoints.toLocaleString()})` : '-30';
+    pointsCell  = `<td style="text-align:center;color:#ef4444">${pts}</td>`;
+    taskCell    = `<td style="text-align:center">—</td>`;
+    monsterCell = `<td style="text-transform:capitalize">${escHtml(e.monster)}</td>`;
+    killsCell   = `<td style="text-align:center">${e.amount.toLocaleString()}</td>`;
+  } else if (isCape) {
+    pointsCell  = `<td style="text-align:center">—</td>`;
+    taskCell    = `<td style="text-align:center">—</td>`;
+    monsterCell = `<td style="color:#6b7280;font-style:italic">—</td>`;
+    killsCell   = `<td style="text-align:center">—</td>`;
   } else {
-    pointsCell = `<td style="text-align:center">—</td>`;
-    taskCell = `<td style="text-align:center">—</td>`;
+    pointsCell  = `<td style="text-align:center">—</td>`;
+    taskCell    = `<td style="text-align:center">—</td>`;
+    monsterCell = `<td style="text-transform:capitalize">${escHtml(e.monster)}</td>`;
+    killsCell   = `<td style="text-align:center">${e.amount.toLocaleString()}</td>`;
   }
 
+  const rowStyle = isSkip ? ' style="background:#1c1008"' : isCape ? ' style="background:#1e1b2e"' : '';
+
   return `
-  <tr${isSkip ? ' style="background:#1c1008"' : ''}>
+  <tr${rowStyle}>
     ${timestampCell(e)}
     <td>${escHtml(e.username)}</td>
-    <td>${badge(e.message_type, isSkip)}</td>
-    <td style="text-transform:capitalize">${escHtml(e.monster)}</td>
-    <td style="text-align:center">${e.amount.toLocaleString()}</td>
+    <td>${badge(e.message_type)}</td>
+    ${monsterCell}
+    ${killsCell}
     ${taskCell}
     ${pointsCell}
   </tr>`;
@@ -89,28 +105,20 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
     .map(u => `<option value="${escHtml(u)}"${u === username ? ' selected' : ''}>${escHtml(u)}</option>`)
     .join('');
 
-  // Compute skip point totals oldest-to-newest (events array is newest-first so iterate reversed).
-  // For each skip, the total after deduction = total at that point in time - 30.
-  // We anchor from the nearest known total_points on a completion event.
+  // Compute running points total for skip rows (oldest-to-newest, array is newest-first).
+  // Anchor from task completed total_points, subtract 30 per skip going backwards.
   const skipTotals = new Array(events.length).fill(null);
   let pts = null;
   for (let i = events.length - 1; i >= 0; i--) {
     const e = events[i];
-    if (e.message_type === 'task completed' && e.total_points != null) {
-      pts = e.total_points;
-    }
-    const isSkip = e.message_type === 'new task' && e.next_message_type === 'new task';
-    if (isSkip && pts != null) {
+    if (e.message_type === 'task completed' && e.total_points != null) pts = e.total_points;
+    if (e.message_type === 'task skipped' && pts != null) {
       pts -= 30;
       skipTotals[i] = pts;
     }
   }
 
-  const rowParts = events.map((e, i) => {
-    const isSkip = e.message_type === 'new task' && e.next_message_type === 'new task';
-    return row(e, isSkip, skipTotals[i]);
-  });
-  const rows = rowParts.join('');
+  const rows = events.map((e, i) => row(e, skipTotals[i])).join('');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -172,6 +180,8 @@ function renderPage({ events, total, page, totalPages, username, type, dateFrom,
           <option value=""${!type ? ' selected' : ''}>All types</option>
           <option value="new task"${type === 'new task' ? ' selected' : ''}>New Task</option>
           <option value="task completed"${type === 'task completed' ? ' selected' : ''}>Completed</option>
+          <option value="task skipped"${type === 'task skipped' ? ' selected' : ''}>Skipped</option>
+          <option value="cape perk proc"${type === 'cape perk proc' ? ' selected' : ''}>Cape Perk</option>
         </select>
       </label>
       <label>
