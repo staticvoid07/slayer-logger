@@ -74,7 +74,7 @@ function row(e, skipTotalPoints) {
   } else {
     const newTaskPts = e.message_type === 'new task' && e.total_points != null ? `(${e.total_points.toLocaleString()})` : '—';
     pointsCell  = `<td style="text-align:center;color:#6b7280">${newTaskPts}</td>`;
-    taskCell    = `<td style="text-align:center">—</td>`;
+    taskCell    = `<td style="text-align:center">${e.tasks ?? '—'}</td>`;
     killsCell   = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   }
 
