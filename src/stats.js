@@ -60,7 +60,8 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
       .map(([monster, d]) => {
         const taskCount = taskCountByMonster[monster] ?? 0;
         const pct = taskCount > 0 ? ((d.completions / taskCount) * 100).toFixed(1) : '100.0';
-        const totalAssigned = (assignedByMonster[monster] ?? 0).toLocaleString();
+        const totalAssigned = d.assigned.toLocaleString();
+        const ratio = d.assigned > 0 ? ` (${(d.kills / d.assigned).toFixed(2)})` : '';
         const isActive = currentTask && currentTask.monster.toLowerCase() === monster;
         return `
         <tr${isActive ? ' style="background:#052e16"' : ''}>
@@ -68,7 +69,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
           <td style="text-align:center">${taskCount}</td>
           <td style="text-align:center">${d.completions} (${pct}%)</td>
           <td style="text-align:center">${totalAssigned}</td>
-          <td style="text-align:center">${d.kills.toLocaleString()}${assignedByMonster[monster] ? ` (${(d.kills / assignedByMonster[monster]).toFixed(2)})` : ''}</td>
+          <td style="text-align:center">${d.kills.toLocaleString()}${ratio}</td>
           <td style="text-align:center">${d.xp > 0 ? d.xp.toLocaleString() : '—'}</td>
         </tr>`;
       })

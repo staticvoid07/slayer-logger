@@ -49,9 +49,10 @@ function row(e, skipTotalPoints) {
     const pts = e.points != null && e.total_points != null
       ? `+${e.points} (${e.total_points.toLocaleString()})`
       : e.points != null ? `+${e.points}` : '—';
+    const killCount = e.kills ?? e.amount;
     pointsCell = `<td style="text-align:center">${pts}</td>`;
     taskCell   = `<td style="text-align:center">${e.tasks ?? '—'}</td>`;
-    killsCell  = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
+    killsCell  = `<td style="text-align:center">${killCount != null ? killCount.toLocaleString() : '—'}</td>`;
   } else if (isSkip) {
     // total_points on skip = running total after deduction
     const total = e.total_points != null ? e.total_points.toLocaleString() : (skipTotalPoints != null ? skipTotalPoints.toLocaleString() : null);

@@ -17,7 +17,7 @@ app.post('/webhook', async (req, res) => {
 
   const {
     username, timestamp, message_type,
-    monster, amount, tasks, points, xp, total_points,
+    monster, amount, kills, tasks, points, xp, total_points,
     area, tasks_completed, slayer_master,
   } = body;
 
@@ -44,14 +44,15 @@ app.post('/webhook', async (req, res) => {
   try {
     await pool.query(
       `INSERT INTO events
-         (username, occurred_at, message_type, monster, amount, tasks, points, xp, total_points, area, tasks_completed, slayer_master, raw)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+         (username, occurred_at, message_type, monster, amount, kills, tasks, points, xp, total_points, area, tasks_completed, slayer_master, raw)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
       [
         username,
         occurredAt,
         message_type,
         monster ?? null,
         amount ?? null,
+        kills ?? null,
         tasks ?? null,
         points ?? null,
         xp ?? null,
@@ -196,8 +197,9 @@ app.get('/stats', async (req, res) => {
         pendingStart[m] = new Date(e.occurred_at).getTime();
       } else if (e.message_type === 'task completed') {
         const m = e.monster.toLowerCase();
-        if (!completedByMonster[m]) completedByMonster[m] = { kills: 0, xp: 0, completions: 0, taskMs: 0, timedTasks: 0 };
-        completedByMonster[m].kills += e.amount;
+        if (!completedByMonster[m]) completedByMonster[m] = { kills: 0, assigned: 0, xp: 0, completions: 0, taskMs: 0, timedTasks: 0 };
+        completedByMonster[m].kills += e.kills ?? e.amount ?? 0;
+        completedByMonster[m].assigned += e.amount ?? 0;
         completedByMonster[m].xp += e.xp ?? 0;
         completedByMonster[m].completions += 1;
         totalXp += e.xp ?? 0;

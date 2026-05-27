@@ -17,6 +17,7 @@ async function init() {
       message_type     TEXT        NOT NULL,
       monster          TEXT,
       amount           INTEGER,
+      kills            INTEGER,
       tasks            INTEGER,
       points           INTEGER,
       xp               INTEGER,
@@ -33,6 +34,7 @@ async function init() {
     ALTER TABLE events ADD COLUMN IF NOT EXISTS area TEXT;
     ALTER TABLE events ADD COLUMN IF NOT EXISTS tasks_completed INTEGER;
     ALTER TABLE events ADD COLUMN IF NOT EXISTS slayer_master INTEGER;
+    ALTER TABLE events ADD COLUMN IF NOT EXISTS kills INTEGER;
     ALTER TABLE events ALTER COLUMN monster DROP NOT NULL;
     ALTER TABLE events ALTER COLUMN amount DROP NOT NULL;
 
