@@ -3,7 +3,7 @@ function badge(type) {
     'new task':       ['#3b82f6', 'New Task'],
     'task completed': ['#22c55e', 'Completed'],
     'task skipped':   ['#78350f', 'Skipped', '#fde68a'],
-    'superior spawn': ['#b45309', 'Superior', '#fef3c7'],
+    'superior spawn': ['#0e7490', 'Superior'],
     'cape perk proc': ['#7c3aed', 'Cape Perk'],
     'task reminder':  ['#f59e0b', 'Reminder'],
   };
@@ -78,7 +78,7 @@ function row(e, skipTotalPoints) {
     killsCell   = `<td style="text-align:center">${e.amount != null ? e.amount.toLocaleString() : '—'}</td>`;
   }
 
-  const rowStyle = isSkip ? ' style="background:#1c1008"' : isSuperior ? ' style="background:#1c1204"' : isCape ? ' style="background:#1e1b2e"' : '';
+  const rowStyle = isSkip ? ' style="background:#1c1008"' : isSuperior ? ' style="background:#082f36"' : isCape ? ' style="background:#1e1b2e"' : '';
 
   return `
   <tr${rowStyle}>
