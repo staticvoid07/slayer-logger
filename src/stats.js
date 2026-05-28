@@ -56,17 +56,22 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
     ].join('');
 
     // Completed per monster table
+    const splitKey = k => { const i = k.indexOf('|'); return [k.slice(0, i), k.slice(i + 1)]; };
+    const activeKey = currentTask ? `${currentTask.monster.toLowerCase()}|${currentTask.area || ''}` : null;
+
     const monsterRows = Object.entries(completedByMonster)
       .sort((a, b) => b[1].completions - a[1].completions)
-      .map(([monster, d]) => {
-        const taskCount = taskCountByMonster[monster] ?? 0;
+      .map(([k, d]) => {
+        const [monster, area] = splitKey(k);
+        const taskCount = taskCountByMonster[k] ?? 0;
         const pct = taskCount > 0 ? ((d.completions / taskCount) * 100).toFixed(1) : '100.0';
         const totalAssigned = d.assigned.toLocaleString();
         const ratio = d.assigned > 0 ? ` (${(d.kills / d.assigned).toFixed(2)})` : '';
-        const isActive = currentTask && currentTask.monster.toLowerCase() === monster;
+        const isActive = k === activeKey;
+        const areaTag = area ? ` <span style="font-size:0.72rem;color:#9ca3af;background:#374151;padding:1px 6px;border-radius:4px">${escHtml(area)}</span>` : '';
         return `
         <tr${isActive ? ' style="background:#052e16"' : ''}>
-          <td style="text-transform:capitalize">${escHtml(monster)}</td>
+          <td style="text-transform:capitalize">${escHtml(monster)}${areaTag}</td>
           <td style="text-align:center">${taskCount}</td>
           <td style="text-align:center">${d.completions} (${pct}%)</td>
           <td style="text-align:center">${totalAssigned}</td>
@@ -78,17 +83,21 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
 
     // Skipped-only monsters (assigned but never completed in this period)
     const skippedOnly = Object.entries(skippedByMonster)
-      .filter(([m]) => !completedByMonster[m])
+      .filter(([k]) => !completedByMonster[k])
       .sort((a, b) => b[1] - a[1])
-      .map(([monster, count]) => `
+      .map(([k, count]) => {
+        const [monster, area] = splitKey(k);
+        const areaTag = area ? ` <span style="font-size:0.72rem;color:#9ca3af;background:#374151;padding:1px 6px;border-radius:4px">${escHtml(area)}</span>` : '';
+        return `
         <tr>
-          <td style="text-transform:capitalize">${escHtml(monster)}</td>
-          <td style="text-align:center">${taskCountByMonster[monster] ?? count}</td>
+          <td style="text-transform:capitalize">${escHtml(monster)}${areaTag}</td>
+          <td style="text-align:center">${taskCountByMonster[k] ?? count}</td>
           <td style="text-align:center">0 (0%)</td>
-          <td style="text-align:center">${(assignedByMonster[monster] ?? 0).toLocaleString()}</td>
+          <td style="text-align:center">${(assignedByMonster[k] ?? 0).toLocaleString()}</td>
           <td style="text-align:center">0 (0.00)</td>
           <td style="text-align:center">—</td>
-        </tr>`)
+        </tr>`;
+      })
       .join('');
 
     const gapsSection = gaps.length === 0

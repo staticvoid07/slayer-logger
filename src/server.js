@@ -190,37 +190,39 @@ app.get('/stats', async (req, res) => {
     let capeProcs = 0;
     let superiorSpawns = 0;
 
+    const key = (monster, area) => `${monster.toLowerCase()}|${area || ''}`;
+
     for (const e of events) {
       if (e.message_type === 'new task') {
-        const m = e.monster.toLowerCase();
-        assignedByMonster[m] = (assignedByMonster[m] ?? 0) + e.amount;
-        taskCountByMonster[m] = (taskCountByMonster[m] ?? 0) + 1;
-        pendingStart[m] = new Date(e.occurred_at).getTime();
+        const k = key(e.monster, e.area);
+        assignedByMonster[k] = (assignedByMonster[k] ?? 0) + e.amount;
+        taskCountByMonster[k] = (taskCountByMonster[k] ?? 0) + 1;
+        pendingStart[k] = new Date(e.occurred_at).getTime();
       } else if (e.message_type === 'task completed') {
-        const m = e.monster.toLowerCase();
-        if (!completedByMonster[m]) completedByMonster[m] = { kills: 0, assigned: 0, xp: 0, completions: 0, taskMs: 0, timedTasks: 0 };
-        completedByMonster[m].kills += e.kills ?? e.amount ?? 0;
-        completedByMonster[m].assigned += e.amount ?? 0;
-        completedByMonster[m].xp += e.xp ?? 0;
-        completedByMonster[m].completions += 1;
+        const k = key(e.monster, e.area);
+        if (!completedByMonster[k]) completedByMonster[k] = { kills: 0, assigned: 0, xp: 0, completions: 0, taskMs: 0, timedTasks: 0 };
+        completedByMonster[k].kills += e.kills ?? e.amount ?? 0;
+        completedByMonster[k].assigned += e.amount ?? 0;
+        completedByMonster[k].xp += e.xp ?? 0;
+        completedByMonster[k].completions += 1;
         totalXp += e.xp ?? 0;
         totalPoints += e.points ?? 0;
         if (e.total_points != null) latestTotalPoints = e.total_points;
         if (e.tasks != null) completedStreaks.push(e.tasks);
 
-        if (pendingStart[m] != null && e.xp != null) {
-          const ms = new Date(e.occurred_at).getTime() - pendingStart[m];
+        if (pendingStart[k] != null && e.xp != null) {
+          const ms = new Date(e.occurred_at).getTime() - pendingStart[k];
           if (ms > 0) {
-            completedByMonster[m].taskMs += ms;
-            completedByMonster[m].timedTasks += 1;
+            completedByMonster[k].taskMs += ms;
+            completedByMonster[k].timedTasks += 1;
             totalTaskMs += ms;
             timedTasks += 1;
           }
         }
-        delete pendingStart[m];
+        delete pendingStart[k];
       } else if (e.message_type === 'task skipped') {
-        const m = e.monster.toLowerCase();
-        skippedByMonster[m] = (skippedByMonster[m] ?? 0) + 1;
+        const k = key(e.monster, e.area);
+        skippedByMonster[k] = (skippedByMonster[k] ?? 0) + 1;
         if (e.total_points != null) latestTotalPoints = e.total_points;
       } else if (e.message_type === 'superior spawn') {
         superiorSpawns++;
