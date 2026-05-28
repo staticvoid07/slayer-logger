@@ -223,6 +223,7 @@ app.get('/stats', async (req, res) => {
       } else if (e.message_type === 'task skipped') {
         const k = key(e.monster, e.area);
         skippedByMonster[k] = (skippedByMonster[k] ?? 0) + 1;
+        totalPoints -= 30;
         if (e.total_points != null) latestTotalPoints = e.total_points;
       } else if (e.message_type === 'superior spawn') {
         superiorSpawns++;

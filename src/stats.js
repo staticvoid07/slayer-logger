@@ -51,7 +51,7 @@ function renderStats({ username, dateFrom, dateTo, usernames, stats }) {
       statCard('Cape Perks', capeProcs.toLocaleString()),
       statCard('Total XP', totalXp > 0 ? totalXp.toLocaleString() : '—'),
       statCard('Avg XP/hr', overallXpH != null ? overallXpH.toLocaleString() : '—'),
-      statCard('Points Earned', totalPoints.toLocaleString(), latestTotalPoints != null ? `${latestTotalPoints.toLocaleString()} total` : null),
+      statCard('Net Points', totalPoints.toLocaleString(), latestTotalPoints != null ? `${latestTotalPoints.toLocaleString()} total` : null),
       statCard('Streak Gaps', gaps.length.toLocaleString()),
     ].join('');
 
